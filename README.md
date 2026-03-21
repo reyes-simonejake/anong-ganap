@@ -48,18 +48,51 @@ The MVP focuses on a complete end-to-end planning flow:
 - Places: Foursquare or Google Places
 - Hosting: Vercel (frontend) + Render (backend)
 
+## Project Structure
+
+```
+anong-ganap/
+├── backend/           # Node.js + Express API
+├── mobile/            # React Native mobile app (Expo)
+├── web/               # React web admin/demo
+├── shared/            # Shared types and constants
+└── docs/              # Documentation
+```
+
+## Quick Start
+
+### Backend
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Configure your .env file
+npm run dev
+```
+
+### Web
+```bash
+cd web
+npm install
+npm run dev
+```
+
+### Mobile
+```bash
+cd mobile
+npm install
+npm start
+```
+
 ## Documentation Map
-- [documentation.md](documentation.md): Full product and technical specification
-- [full-mvp.md](full-mvp.md): MVP execution plan and delivery milestones
-- [techstack.md](techstack.md): Detailed technology decisions
-- [future-improvements.md](future-improvements.md): Post-MVP roadmap and enhancements
+- [docs/anong_ganap_full_mvp.md](docs/anong_ganap_full_mvp.md): Complete MVP specification
+- [docs/documentation.md](docs/documentation.md): Full product and technical specification
+- [docs/full-mvp.md](docs/full-mvp.md): MVP execution plan and delivery milestones
+- [docs/techstack.md](docs/techstack.md): Detailed technology decisions
+- [docs/future-improvements.md](docs/future-improvements.md): Post-MVP roadmap and enhancements
 
 ## Current Status
-Planning and documentation phase. Implementation files are not yet initialized in this repository.
-
-## Next Build Steps
-1. Set up backend project structure and core API endpoints.
-2. Set up React Native app with initial planning screens.
-3. Connect weather, places, routing, and AI services.
-4. Implement authentication and plan storage.
-5. Add testing and CI pipeline.
+✅ Backend API structure complete
+✅ Frontend (web & mobile) initialized with Tailwind/NativeWind
+✅ Project structure organized
+🔄 Next: Configure environment variables and connect external APIs

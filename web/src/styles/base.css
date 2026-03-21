@@ -1,0 +1,72 @@
+/* styles/base.css */
+
+@layer base {
+  :root {
+    /* Brand */
+    --color-primary:        #F97316;
+    --color-primary-light:  #FED7AA;
+    --color-primary-dark:   #C2410C;
+
+    /* Backgrounds */
+    --color-bg:             #FAFAF9;
+    --color-surface:        #FFFFFF;
+    --color-surface-muted:  #F5F4F2;
+
+    /* Borders */
+    --color-border:         #E5E5E3;
+    --color-border-strong:  #D1D0CE;
+
+    /* Text */
+    --color-text:           #1C1B1A;
+    --color-text-secondary: #6B6A67;
+    --color-text-muted:     #9CA3AF;
+    --color-text-inverse:   #FFFFFF;
+
+    /* Semantic */
+    --color-success:        #16A34A;
+    --color-warning:        #D97706;
+    --color-error:          #DC2626;
+    --color-info:           #2563EB;
+
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    /* Radius */
+    --radius-sm:  6px;
+    --radius-md:  10px;
+    --radius-lg:  14px;
+    --radius-xl:  20px;
+    --radius-full: 9999px;
+
+    /* Typography */
+    --font-sans: system-ui, -apple-system, sans-serif;
+    --font-size-xs:   11px;
+    --font-size-sm:   13px;
+    --font-size-base: 15px;
+    --font-size-md:   17px;
+    --font-size-lg:   20px;
+    --font-size-xl:   24px;
+    --font-size-2xl:  30px;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+}

@@ -1,0 +1,47 @@
+/* styles/components/tables.css */
+
+@layer components {
+  .table-container {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    overflow: hidden;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table__head {
+    background-color: var(--color-surface-muted);
+  }
+
+  .table__header {
+    padding: var(--space-3) var(--space-5);
+    text-align: left;
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .table__body {
+    background-color: var(--color-surface);
+  }
+
+  .table__row {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .table__cell {
+    padding: var(--space-4) var(--space-5);
+    color: var(--color-text);
+  }
+
+  .table__cell--center {
+    text-align: center;
+    color: var(--color-text-secondary);
+  }
+}

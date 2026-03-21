@@ -1,0 +1,50 @@
+/* styles/components/cards.css */
+
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+
+  .stat-card {
+    @apply card;
+  }
+
+  .stat-card__title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+    color: var(--color-text);
+  }
+
+  .stat-card__value {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+  }
+
+  .stat-card__value--primary {
+    color: var(--color-primary);
+  }
+
+  .stat-card__value--success {
+    color: var(--color-success);
+  }
+
+  .stat-card__value--info {
+    color: var(--color-info);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+}
