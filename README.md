@@ -52,36 +52,47 @@ The MVP focuses on a complete end-to-end planning flow:
 
 ```
 anong-ganap/
-├── backend/           # Node.js + Express API
-├── mobile/            # React Native mobile app (Expo)
-├── web/               # React web admin/demo
+├── backend/           # Node.js + Express API (server-side logic)
+├── landing/           # Public landing page (marketing site for users)
+├── web/               # Admin dashboard (internal management)
+├── mobile/            # React Native mobile app (Expo - user app)
 ├── shared/            # Shared types and constants
 └── docs/              # Documentation
 ```
 
 ## Quick Start
 
-### Backend
+### Landing Page (Public Site)
+```bash
+cd landing
+npm install
+npm run dev
+```
+Visit http://localhost:5173 - This is what users see when they visit your site.
+
+### Admin Dashboard
+```bash
+cd web
+npm install
+npm run dev
+```
+Visit http://localhost:5173 - Internal dashboard for managing plans and users.
+
+### Mobile App (User App)
+```bash
+cd mobile
+npm install
+npm start
+```
+Scan QR code with Expo Go app.
+
+### Backend API
 ```bash
 cd backend
 npm install
 cp .env.example .env
 # Configure your .env file
 npm run dev
-```
-
-### Web
-```bash
-cd web
-npm install
-npm run dev
-```
-
-### Mobile
-```bash
-cd mobile
-npm install
-npm start
 ```
 
 ## Documentation Map
@@ -93,6 +104,15 @@ npm start
 
 ## Current Status
 ✅ Backend API structure complete
-✅ Frontend (web & mobile) initialized with Tailwind/NativeWind
-✅ Project structure organized
+✅ Landing page created (public-facing marketing site)
+✅ Admin dashboard initialized (internal management)
+✅ Mobile app initialized with NativeWind
+✅ Project structure organized with clear separation
 🔄 Next: Configure environment variables and connect external APIs
+
+## Project Separation
+
+- **landing/** - Public marketing website (what users see on the internet)
+- **web/** - Admin dashboard (for internal team to manage plans, users, analytics)
+- **mobile/** - User-facing mobile app (where users create and view their plans)
+- **backend/** - API server (handles all business logic and data)
