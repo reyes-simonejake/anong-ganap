@@ -3,94 +3,101 @@ import { generateItinerary } from '../services/aiService.js';
 import { getWeatherData } from '../services/weatherService.js';
 import { fetchNearbyPlaces } from '../services/placesService.js';
 
-export const createPlan = async (req, res) => {
-  try {
-    const { userId, location, budget, activityType, date, transportPreference } = req.body;
+export const createPlan = async (req, res, next) => {
+    try {
+        const {
+            userId,
+            location,
+            budget,
+            activityType,
+            date,
+            transportPreference,
+        } = req.body;
 
-    // Get weather data
-    const weather = await getWeatherData(location);
+        // Parallel fetch: weather + places
+        const [weather, places] = await Promise.all([
+            getWeatherData(location),
+            fetchNearbyPlaces(location),
+        ]);
 
-    // Get nearby places
-    const places = await fetchNearbyPlaces(location);
+        const itinerary = await generateItinerary({
+            location,
+            budget,
+            activityType,
+            date,
+            weather,
+            places,
+            transportPreference,
+        });
 
-    // Generate AI itinerary
-    const itinerary = await generateItinerary({
-      location,
-      budget,
-      activityType,
-      weather,
-      places,
-      transportPreference
-    });
+        const { data: plan, error: planErr } = await supabase
+            .from('plans')
+            .insert({
+                user_id: userId || null,
+                title: itinerary.title,
+                location,
+                budget: Number(budget),
+                theme: activityType,
+                date_created: new Date().toISOString(),
+                weather_summary: weather.description,
+            })
+            .select()
+            .single();
 
-    // Save to database
-    const { data, error } = await supabase
-      .from('plans')
-      .insert({
-        user_id: userId,
-        title: itinerary.title,
-        location,
-        budget,
-        theme: activityType,
-        date_created: new Date(),
-        weather_summary: weather.description
-      })
-      .select()
-      .single();
+        if (planErr) throw planErr;
 
-    if (error) throw error;
+        const activities = itinerary.activities.map((activity) => ({
+            plan_id: plan.plan_id,
+            ...activity,
+        }));
 
-    // Save activities
-    const activities = itinerary.activities.map(activity => ({
-      plan_id: data.plan_id,
-      ...activity
-    }));
+        const { error: actErr } = await supabase
+            .from('activities')
+            .insert(activities);
+        if (actErr) throw actErr;
 
-    await supabase.from('activities').insert(activities);
-
-    res.json({ success: true, plan: data, itinerary });
-  } catch (error) {
-    console.error('Error creating plan:', error);
-    res.status(500).json({ error: error.message });
-  }
+        res.status(201).json({ success: true, plan, itinerary });
+    } catch (err) {
+        next(err);
+    }
 };
 
-export const getPlan = async (req, res) => {
-  try {
-    const { id } = req.params;
+export const getPlan = async (req, res, next) => {
+    try {
+        const { id } = req.params;
 
-    const { data: plan, error: planError } = await supabase
-      .from('plans')
-      .select('*')
-      .eq('plan_id', id)
-      .single();
+        const [
+            { data: plan, error: planErr },
+            { data: activities, error: actErr },
+        ] = await Promise.all([
+            supabase.from('plans').select('*').eq('plan_id', id).single(),
+            supabase.from('activities').select('*').eq('plan_id', id),
+        ]);
 
-    if (planError) throw planError;
+        if (planErr) throw planErr;
+        if (!plan)
+            return res
+                .status(404)
+                .json({ success: false, error: 'Plan not found' });
+        if (actErr) throw actErr;
 
-    const { data: activities, error: activitiesError } = await supabase
-      .from('activities')
-      .select('*')
-      .eq('plan_id', id);
-
-    if (activitiesError) throw activitiesError;
-
-    res.json({ plan, activities });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+        res.json({ success: true, plan, activities });
+    } catch (err) {
+        next(err);
+    }
 };
 
-export const getAllPlans = async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('plans')
-      .select('*')
-      .order('date_created', { ascending: false });
+export const getAllPlans = async (req, res, next) => {
+    try {
+        const { data, error } = await supabase
+            .from('plans')
+            .select('*')
+            .order('date_created', { ascending: false });
 
-    if (error) throw error;
+        if (error) throw error;
 
-    res.json({ plans: data });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+        res.json({ success: true, plans: data });
+    } catch (err) {
+        next(err);
+    }
 };

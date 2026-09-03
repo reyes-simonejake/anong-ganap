@@ -1,53 +1,79 @@
 import { generateInvitationMessage } from '../services/aiService.js';
-import { sendEmail } from '../services/emailService.js';
+import { sendEmail, buildInvitationHTML } from '../services/emailService.js';
 import { supabase } from '../config/supabase.js';
 
-export const createInvitation = async (req, res) => {
-  try {
-    const { planId } = req.body;
+export const createInvitation = async (req, res, next) => {
+    try {
+        const { planId } = req.body;
 
-    // Get plan details
-    const { data: plan } = await supabase
-      .from('plans')
-      .select('*')
-      .eq('plan_id', planId)
-      .single();
+        const { data: plan, error: planErr } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('plan_id', planId)
+            .single();
 
-    const { data: activities } = await supabase
-      .from('activities')
-      .select('*')
-      .eq('plan_id', planId);
+        if (planErr) throw planErr;
+        if (!plan)
+            return res
+                .status(404)
+                .json({ success: false, error: 'Plan not found' });
 
-    const message = await generateInvitationMessage(plan, activities);
+        const { data: activities, error: actErr } = await supabase
+            .from('activities')
+            .select('*')
+            .eq('plan_id', planId);
 
-    res.json({ success: true, message });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+        if (actErr) throw actErr;
+
+        const message = await generateInvitationMessage(plan, activities);
+
+        res.json({ success: true, message });
+    } catch (err) {
+        next(err);
+    }
 };
 
-export const sendInvitation = async (req, res) => {
-  try {
-    const { planId, receiverEmail, message } = req.body;
+export const sendInvitation = async (req, res, next) => {
+    try {
+        const { planId, receiverEmail, message } = req.body;
 
-    await sendEmail(receiverEmail, 'You\'re Invited!', message);
+        const { data: plan, error: planErr } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('plan_id', planId)
+            .single();
 
-    // Save invitation record
-    const { data, error } = await supabase
-      .from('invitations')
-      .insert({
-        plan_id: planId,
-        receiver_email: receiverEmail,
-        invitation_message: message,
-        sent_status: 'sent'
-      })
-      .select()
-      .single();
+        if (planErr) throw planErr;
+        if (!plan)
+            return res
+                .status(404)
+                .json({ success: false, error: 'Plan not found' });
 
-    if (error) throw error;
+        const inviteLink = `${process.env.FRONTEND_URL}/plan/${planId}`;
+        const htmlBody = buildInvitationHTML(plan, message, inviteLink);
 
-    res.json({ success: true, invitation: data });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+        await sendEmail(
+            receiverEmail,
+            "You're Invited to Anong Ganap! 🎉",
+            message,
+            htmlBody
+        );
+
+        const { data, error } = await supabase
+            .from('invitations')
+            .insert({
+                plan_id: planId,
+                receiver_email: receiverEmail,
+                invitation_message: message,
+                sent_status: 'sent',
+            })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        res.json({ success: true, invitation: data });
+    } catch (err) {
+        next(err);
+    }
 };

@@ -1,118 +1,98 @@
-# Anong Ganap?
+# Anong Ganap? 🎉
 
-Anong Ganap? is an AI-powered planner that builds complete activity itineraries for dates, hangouts, family trips, and solo adventures.
+AI-powered collaborative activity planner for Filipino friend groups and couples.
 
-## What Problem It Solves
-Planning one activity usually requires switching between multiple apps for places, routes, budgeting, outfit ideas, and invitations. This creates decision fatigue and wastes time.
-
-## Core Value
-The app combines planning tasks into one flow:
-
-- Generates a full itinerary from simple user inputs.
-- Recommends places and routes based on budget, time, and location.
-- Adjusts activities and outfit suggestions based on weather.
-- Creates invitation messages users can share instantly.
-- Stores plans and memories for future reference.
-
-## MVP Scope
-The MVP focuses on a complete end-to-end planning flow:
-
-1. Collect user preferences (location, budget, mood, date, duration, transport).
-2. Generate a weather-aware itinerary.
-3. Show place recommendations and route options.
-4. Suggest coordinated outfits.
-5. Generate and send invitations.
-6. Save plans in the database.
-
-## Target Users
-- Couples planning dates
-- Friends planning hangouts
-- Families planning outings
-- Tourists exploring unfamiliar places
-- Solo users discovering personal activities
-
-## Architecture At A Glance
-- Client apps: React Native mobile app, optional React web admin/demo
-- Backend: Node.js + Express REST API
-- Data: PostgreSQL (Supabase)
-- Integrations: AI provider, weather API, maps/routing API, places API, email API
-
-## Tech Stack Summary
-- Mobile: React Native + Expo
-- Web admin/demo: React + Tailwind CSS
-- Backend: Node.js + Express
-- Database: Supabase/PostgreSQL
-- AI: OpenAI API (with optional fallback provider)
-- Weather: OpenWeatherMap
-- Maps and routing: OpenStreetMap + OpenRouteService
-- Places: Foursquare or Google Places
-- Hosting: Vercel (frontend) + Render (backend)
+---
 
 ## Project Structure
 
 ```
 anong-ganap/
-├── backend/           # Node.js + Express API (server-side logic)
-├── landing/           # Public landing page (marketing site for users)
-├── web/               # Admin dashboard (internal management)
-├── mobile/            # React Native mobile app (Expo - user app)
-├── shared/            # Shared types and constants
-└── docs/              # Documentation
+├── backend/         — Express.js API (Node.js)
+├── mobile/          — React Native / Expo app
+├── web/             — React admin/web dashboard (Vite)
+├── landing/         — Landing page (Vite + Tailwind)
+├── shared/          — Shared TypeScript types
+└── docs/            — Documentation
 ```
+
+---
 
 ## Quick Start
 
-### Landing Page (Public Site)
-```bash
-cd landing
-npm install
-npm run dev
-```
-Visit http://localhost:5173 - This is what users see when they visit your site.
+### 1. Backend
 
-### Admin Dashboard
+```bash
+cd backend
+cp .env.example .env   # fill in your API keys
+npm install
+npm run dev            # runs on http://localhost:5000
+```
+
+**Required env vars:**
+| Key | Where to get it |
+|-----|----------------|
+| `SUPABASE_URL` | Supabase project settings |
+| `SUPABASE_ANON_KEY` | Supabase project settings |
+| `OPENAI_API_KEY` | platform.openai.com |
+| `WEATHER_API_KEY` | openweathermap.org |
+| `FOURSQUARE_API_KEY` | developer.foursquare.com |
+| `EMAIL_API_KEY` / `EMAIL_API_SECRET` | mailjet.com |
+
+**Set up Supabase tables:**
+Run `backend/supabase-schema.sql` in your Supabase SQL editor.
+
+---
+
+### 2. Web Admin
+
 ```bash
 cd web
+cp .env.example .env   # set VITE_API_URL=http://localhost:5000
 npm install
-npm run dev
+npm run dev            # runs on http://localhost:5173
 ```
-Visit http://localhost:5173 - Internal dashboard for managing plans and users.
 
-### Mobile App (User App)
+---
+
+### 3. Mobile App
+
 ```bash
 cd mobile
 npm install
-npm start
-```
-Scan QR code with Expo Go app.
-
-### Backend API
-```bash
-cd backend
-npm install
-cp .env.example .env
-# Configure your .env file
-npm run dev
+npm start              # Expo dev server
 ```
 
-## Documentation Map
-- [docs/anong_ganap_full_mvp.md](docs/anong_ganap_full_mvp.md): Complete MVP specification
-- [docs/documentation.md](docs/documentation.md): Full product and technical specification
-- [docs/full-mvp.md](docs/full-mvp.md): MVP execution plan and delivery milestones
-- [docs/techstack.md](docs/techstack.md): Detailed technology decisions
-- [docs/future-improvements.md](docs/future-improvements.md): Post-MVP roadmap and enhancements
+> When testing on a physical device, update `EXPO_PUBLIC_API_URL` in `mobile/.env`
+> to your machine's local IP address (e.g. `http://192.168.1.x:5000`).
 
-## Current Status
-✅ Backend API structure complete
-✅ Landing page created (public-facing marketing site)
-✅ Admin dashboard initialized (internal management)
-✅ Mobile app initialized with NativeWind
-✅ Project structure organized with clear separation
-🔄 Next: Configure environment variables and connect external APIs
+---
 
-## Project Separation
+## API Endpoints
 
-- **landing/** - Public marketing website (what users see on the internet)
-- **web/** - Admin dashboard (for internal team to manage plans, users, analytics)
-- **mobile/** - User-facing mobile app (where users create and view their plans)
-- **backend/** - API server (handles all business logic and data)
+| Method | Route                                | Description                  |
+| ------ | ------------------------------------ | ---------------------------- |
+| `POST` | `/api/plan/create`                   | Generate AI itinerary        |
+| `GET`  | `/api/plan`                          | List all plans               |
+| `GET`  | `/api/plan/:id`                      | Get single plan + activities |
+| `POST` | `/api/outfit/generate`               | Generate outfit suggestions  |
+| `GET`  | `/api/weather/:location`             | Get current weather          |
+| `GET`  | `/api/places/nearby?location=&type=` | Get nearby places            |
+| `POST` | `/api/invitation/create`             | Generate invite message      |
+| `POST` | `/api/invitation/send`               | Send invitation email        |
+| `GET`  | `/health`                            | Health check                 |
+
+---
+
+## Tech Stack
+
+- **Backend:** Node.js, Express, Supabase (PostgreSQL), OpenAI, Axios
+- **Mobile:** React Native, Expo, NativeWind
+- **Web:** React, Vite, TailwindCSS, React Router
+- **APIs:** OpenWeatherMap, Foursquare Places, Mailjet
+
+---
+
+## MVP Status
+
+See `backend/anong-ganap-workflow.md` for the full workflow and `docs/` for detailed specs.

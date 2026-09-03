@@ -1,9 +1,17 @@
 import express from 'express';
-import { createInvitation, sendInvitation } from '../controllers/invitationController.js';
+import {
+    createInvitation,
+    sendInvitation,
+} from '../controllers/invitationController.js';
+import { validate } from '../middleware/validate.js';
 
 const router = express.Router();
 
-router.post('/create', createInvitation);
-router.post('/send', sendInvitation);
+router.post('/create', validate(['planId']), createInvitation);
+router.post(
+    '/send',
+    validate(['planId', 'receiverEmail', 'message']),
+    sendInvitation
+);
 
 export default router;
