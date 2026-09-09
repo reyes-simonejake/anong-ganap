@@ -49,7 +49,9 @@ Thumbs.db
 *.orig.*
 web-build/
 
-# Misc
+# Misc local caches
 .cache/
 temp/
 tmp/
+tmp-npm-cache/
+**/tmp-npm-cache/
