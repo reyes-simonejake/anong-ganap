@@ -2,9 +2,16 @@ import axios from 'axios';
 
 const MAILJET_URL = 'https://api.mailjet.com/v3.1/send';
 
+const escapeHTML = (value) =>
+    String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+
 /**
- * Sends an email via Mailjet.
- * Falls back to console log in development when keys are not set.
+ * Sends an email via Mailjet, with a non-sensitive development fallback.
  */
 export const sendEmail = async (to, subject, message, htmlMessage = null) => {
     const apiKey = process.env.EMAIL_API_KEY;
@@ -12,36 +19,38 @@ export const sendEmail = async (to, subject, message, htmlMessage = null) => {
     const fromEmail = process.env.EMAIL_FROM || 'noreply@anongganap.com';
     const fromName = process.env.EMAIL_FROM_NAME || 'Anong Ganap';
 
-    // Dev fallback — no real keys configured
     if (!apiKey || apiKey === 'your_mailjet_api_key') {
-        console.log('📧 [DEV] Email not sent (no API key). Would have sent:');
-        console.log(`  To: ${to}`);
-        console.log(`  Subject: ${subject}`);
-        console.log(`  Message: ${message}`);
+        console.log('[DEV] Email not sent because email credentials are not configured.');
         return { success: true, dev: true };
     }
 
-    const payload = {
-        Messages: [
-            {
-                From: { Email: fromEmail, Name: fromName },
-                To: [{ Email: to }],
-                Subject: subject,
-                TextPart: message,
-                ...(htmlMessage && { HTMLPart: htmlMessage }),
-            },
-        ],
-    };
+    try {
+        const payload = {
+            Messages: [
+                {
+                    From: { Email: fromEmail, Name: fromName },
+                    To: [{ Email: to }],
+                    Subject: subject,
+                    TextPart: message,
+                    ...(htmlMessage && { HTMLPart: htmlMessage }),
+                },
+            ],
+        };
 
-    const response = await axios.post(MAILJET_URL, payload, {
-        auth: { username: apiKey, password: apiSecret },
-        headers: { 'Content-Type': 'application/json' },
-    });
+        const response = await axios.post(MAILJET_URL, payload, {
+            auth: { username: apiKey, password: apiSecret },
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 10000,
+        });
 
-    return {
-        success: true,
-        messageId: response.data.Messages?.[0]?.To?.[0]?.MessageID,
-    };
+        return {
+            success: true,
+            messageId: response.data.Messages?.[0]?.To?.[0]?.MessageID,
+        };
+    } catch (error) {
+        console.error('Email delivery failed:', error.message);
+        throw new Error('Failed to send invitation email');
+    }
 };
 
 /**
@@ -65,15 +74,15 @@ export const buildInvitationHTML = (plan, message, inviteLink) => `
 <body>
   <div class="container">
     <div class="header">
-      <h1>🎉 Anong Ganap?</h1>
+      <h1>Anong Ganap?</h1>
       <p style="margin:8px 0 0">You've been invited!</p>
     </div>
     <div class="body">
-      <p>${message.replace(/\n/g, '<br/>')}</p>
-      <p><strong>📍 Location:</strong> ${plan.location}</p>
-      <a class="btn" href="${inviteLink}">View the Plan</a>
+      <p>${escapeHTML(message).replace(/\n/g, '<br/>')}</p>
+      <p><strong>Location:</strong> ${escapeHTML(plan.location)}</p>
+      <a class="btn" href="${escapeHTML(inviteLink)}">View the Plan</a>
     </div>
-    <div class="footer">Anong Ganap? — AI-powered activity planner</div>
+    <div class="footer">Anong Ganap? - AI-powered activity planner</div>
   </div>
 </body>
 </html>

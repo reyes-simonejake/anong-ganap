@@ -1,44 +1,70 @@
 import { createClient } from 'redis';
 
-export const createRedisClient = () => {
+const createNoOpCache = () => ({
+  get: async () => null,
+  set: async () => {},
+  del: async () => {},
+  getOrSet: async (_, __, fetchFn) => fetchFn(),
+});
+
+export const createRedisClient = async () => {
   const url = process.env.REDIS_URL;
 
   if (!url) {
-    console.log('⚠️  REDIS_URL not set — Redis caching disabled (running without cache)');
-    return {
-      get: async () => null,
-      set: async () => {},
-      del: async () => {},
-      // Provide a no-op getOrSet that immediately calls the fallback
-      getOrSet: async (_, ttl, fetchFn) => fetchFn(),
-    };
+    console.info('REDIS_URL not set; Redis caching disabled.');
+    return createNoOpCache();
   }
 
   const client = createClient({ url });
 
   client.on('error', (err) => console.error('Redis error:', err));
 
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (err) {
+    console.error('Redis connection failed, cache disabled:', err.message);
+    return createNoOpCache();
+  }
 
-  console.log('✅ Redis connected');
+  console.info('Redis cache connected.');
 
-  return {
+  const cache = {
     get: async (key) => {
       const value = await client.get(key);
-      return value ? JSON.parse(value) : null;
+
+      if (!value) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(value);
+      } catch (err) {
+        console.error(`Invalid cache payload for key "${key}", clearing entry:`, err.message);
+        await client.del(key);
+        return null;
+      }
     },
     set: async (key, value, ttlSeconds = 300) => {
       await client.set(key, JSON.stringify(value), { EX: ttlSeconds });
     },
-    del: async (key) => {
-      await client.del(key);
+    del: async (keys) => {
+      const normalizedKeys = Array.isArray(keys) ? keys : [keys];
+      const cacheKeys = normalizedKeys.filter(Boolean);
+
+      if (cacheKeys.length === 0) {
+        return;
+      }
+
+      await client.del(cacheKeys);
     },
     getOrSet: async (key, ttlSeconds, fetchFn) => {
-      const cached = await get(key);
-      if (cached) return cached;
+      const cached = await cache.get(key);
+      if (cached !== null) return cached;
       const fresh = await fetchFn();
-      await set(key, fresh, ttlSeconds);
+      await cache.set(key, fresh, ttlSeconds);
       return fresh;
     },
   };
+
+  return cache;
 };

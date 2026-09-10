@@ -1,8 +1,85 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+let openaiClient;
+
+const isMissingOrPlaceholder = (value) => {
+    const normalizedValue = value?.trim().toLowerCase();
+    return (
+        !normalizedValue ||
+        normalizedValue.startsWith('your_') ||
+        normalizedValue.includes('placeholder')
+    );
+};
+
+const getOpenAIClient = () => {
+    if (!openaiClient) {
+        openaiClient = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+    }
+
+    return openaiClient;
+};
+
+const getFallbackPlace = (places, index, fallbackName) => {
+    return places?.[index]?.name || fallbackName;
+};
+
+const buildMockItinerary = ({
+    location,
+    budget,
+    activityType,
+    date,
+    weather,
+    places,
+}) => {
+    const normalizedBudget = Number.isFinite(Number(budget)) ? Number(budget) : 1500;
+    const activityBudget = Math.max(0, Math.floor(normalizedBudget / 3));
+    const weatherDescription = weather?.description || 'partly cloudy';
+    const indoorOutdoor =
+        weatherDescription.toLowerCase().includes('rain') ? 'indoor' : 'outdoor';
+
+    return {
+        title: `${activityType || 'hangout'} plan in ${location}`,
+        totalEstimatedCost: activityBudget * 3,
+        activities: [
+            {
+                activity_name: 'Start with a casual meal',
+                place_name: getFallbackPlace(places, 0, `${location} local restaurant`),
+                start_time: '10:00',
+                estimated_cost: activityBudget,
+                duration_minutes: 90,
+                indoor_outdoor: 'indoor',
+                description: `Have an easy meal near ${location} before the main activity.`,
+            },
+            {
+                activity_name: 'Explore a nearby spot',
+                place_name: getFallbackPlace(places, 1, `${location} activity spot`),
+                start_time: '12:00',
+                estimated_cost: activityBudget,
+                duration_minutes: 120,
+                indoor_outdoor: indoorOutdoor,
+                description: `Visit a local place that fits the ${weatherDescription.toLowerCase()} weather.`,
+            },
+            {
+                activity_name: 'Wind down with snacks or coffee',
+                place_name: getFallbackPlace(places, 2, `${location} cafe`),
+                start_time: '15:00',
+                estimated_cost: activityBudget,
+                duration_minutes: 75,
+                indoor_outdoor: 'indoor',
+                description: 'End the plan with time to rest, talk, and adjust before heading home.',
+            },
+        ],
+        backup_activity: {
+            activity_name: 'Move to an indoor mall or cafe',
+            place_name: getFallbackPlace(places, 3, `${location} indoor backup spot`),
+            reason: 'Good backup if the weather changes or the group wants a slower pace.',
+        },
+        weather_note: `Expected weather is ${weatherDescription} at around ${weather?.temperature ?? 29}C.`,
+        date: date || null,
+    };
+};
 
 /**
  * Extracts the first valid JSON object/array from a string.
@@ -27,7 +104,19 @@ export const generateItinerary = async ({
     weather,
     places,
     transportPreference,
+    routeContext,
 }) => {
+    if (isMissingOrPlaceholder(process.env.OPENAI_API_KEY)) {
+        return buildMockItinerary({
+            location,
+            budget,
+            activityType,
+            date,
+            weather,
+            places,
+        });
+    }
+
     const placesContext = places?.length
         ? `Available nearby places: ${places.map((p) => p.name).join(', ')}`
         : 'No specific places provided — suggest popular spots in the area.';
@@ -39,6 +128,7 @@ Details:
 - Date: ${date || 'this weekend'}
 - Budget: ₱${budget}
 - Transport: ${transportPreference || 'any'}
+- Route context: ${routeContext?.distanceMeters || 0} meters over ${routeContext?.durationSeconds || 0} seconds via ${routeContext?.provider || 'local fallback'}
 - Weather: ${weather?.description || 'unknown'}, ${weather?.temperature ?? '?'}°C
 ${placesContext}
 
@@ -71,13 +161,19 @@ Return ONLY valid JSON, no markdown:
   "weather_note": "string"
 }`;
 
-    const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-    });
+    try {
+        const openai = getOpenAIClient();
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+        });
 
-    return extractJSON(response.choices[0].message.content);
+        return extractJSON(response.choices[0].message.content);
+    } catch (error) {
+        console.error('OpenAI itinerary generation error:', error.message);
+        throw new Error('Failed to generate itinerary');
+    }
 };
 
 /**
@@ -88,15 +184,25 @@ export const generateInvitationMessage = async (plan, activities) => {
         activities?.map((a) => a.activity_name).join(', ') ||
         'exciting activities';
 
+    if (isMissingOrPlaceholder(process.env.OPENAI_API_KEY)) {
+        return `Join me for a ${plan.theme} outing in ${plan.location}. Planned stops include ${activityList}. Confirm when you can so we can finalize the plan.`;
+    }
+
     const prompt = `Write a short, warm, and exciting invitation message for a ${plan.theme} outing in ${plan.location}.
 Activities planned: ${activityList}.
 Keep it under 120 words, friendly Filipino tone, include a call-to-action.`;
 
-    const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.8,
-    });
+    try {
+        const openai = getOpenAIClient();
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.8,
+        });
 
-    return response.choices[0].message.content.trim();
+        return response.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('OpenAI invitation generation error:', error.message);
+        throw new Error('Failed to generate invitation message');
+    }
 };
