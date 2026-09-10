@@ -55,3 +55,16 @@ temp/
 tmp/
 tmp-npm-cache/
 **/tmp-npm-cache/
+
+# Local Codex and Impeccable tooling (do not commit)
+.agents/
+.codex/
+.impeccable/
+AGENTS.md
+
+# Local documentation and agent guidance (do not commit)
+agents/
+*.md
+
+# Private visual references for UI development (do not commit)
+design-inspiration/
